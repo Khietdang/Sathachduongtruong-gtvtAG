@@ -76,7 +76,7 @@
         }
         .exam-card {
             border: 2px solid #dadce0;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
             background: #fafafa;
         }
@@ -84,45 +84,35 @@
             border-color: #1a73e8;
             background-color: #f4f8ff;
         }
-        .exam-card h3 {
-            margin: 0 0 8px 0;
-            color: #3c4043;
-        }
-        .exam-card p {
-            margin: 5px 0;
-            font-size: 0.9em;
-            color: #5f6368;
-        }
         
-        /* --- ĐỊNH DẠNG CÁC NÚT BẤM THEO CHUẨN UI --- */
+        /* --- ĐỊNH DẠNG CÁC NÚT BẤM LỚN THEO CHUẨN UI --- */
         .start-btn {
             width: 100%;
-            padding: 14px;
+            padding: 18px 10px;
             color: white;
             border: none;
             border-radius: 8px;
             font-weight: bold;
-            font-size: 1.1em;
+            font-size: 1.2em;
             cursor: pointer;
-            margin-top: 8px;
             text-transform: uppercase;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.16);
             transition: background 0.2s;
         }
 
-        /* Bài 1: Xanh lá cây */
+        /* Xanh lá cây */
         .btn-green { background-color: #2ecc71; }
         .btn-green:active { background-color: #27ae60; }
 
-        /* Bài 2: Xanh dương */
+        /* Xanh dương */
         .btn-blue { background-color: #3498db; }
         .btn-blue:active { background-color: #2980b9; }
 
-        /* Bài 3: Vàng */
+        /* Vàng */
         .btn-yellow { background-color: #f1c40f; color: #2c3e50; }
         .btn-yellow:active { background-color: #f39c12; }
 
-        /* Bài 4: Đỏ */
+        /* Đỏ */
         .btn-red { background-color: #e74c3c; }
         .btn-red:active { background-color: #c0392b; }
 
@@ -142,7 +132,7 @@
 
 <div class="container">
     <div class="header-area">
-        <img src="logo.jpg" alt="Logo Trung Tâm" class="logo">
+        <img src="logo.png" alt="Logo Trung Tâm" class="logo">
         <h1>Sát Hạch Đường Trường<br><span style="font-size: 0.85em; color: #5f6368; text-transform: none;">Trung Tâm GDNN GTVT An Giang</span></h1>
     </div>
     
@@ -162,26 +152,18 @@
 
     <div class="exam-list">
         <div class="exam-card" id="card-1">
-            <h3>Bài 1: Xuất phát</h3>
-            <p>Đi đủ 15m báo Bíp.</p>
             <button class="start-btn btn-green" onclick="startExam(1)">Xuất phát</button>
         </div>
 
         <div class="exam-card" id="card-2">
-            <h3>Bài 2: Tăng số tăng tốc độ</h3>
-            <p>Trong 100m phải tăng tốc thêm từ 5km/h trở lên.</p>
             <button class="start-btn btn-blue" onclick="startExam(2)">Tăng số - Tăng tốc</button>
         </div>
 
         <div class="exam-card" id="card-3">
-            <h3>Bài 3: Giảm số giảm tốc độ</h3>
-            <p>Trong 100m phải giảm tốc đi từ 5km/h trở lên.</p>
             <button class="start-btn btn-yellow" onclick="startExam(3)">Giảm số - Giảm tốc</button>
         </div>
 
         <div class="exam-card" id="card-4">
-            <h3>Bài 4: Kết thúc</h3>
-            <p>Phát file âm thanh hiệu lệnh kết thúc.</p>
             <button class="start-btn btn-red" onclick="startExam(4)">Kết thúc</button>
         </div>
     </div>
@@ -244,7 +226,7 @@
     let totalDistanceRun = 0; 
     let currentSpeedKmh = 0;  
 
-    // --- BIẾN THEO DÕI BÀI THI ---
+    // --- BIẾN THEO DÕI TRẠNG THÁI ---
     let activeLesson = 0;
     let startLessonDistance = 0;
     let startLessonSpeed = 0;
@@ -271,7 +253,7 @@
         return R * c; 
     }
 
-    // KÍCH HOẠT GPS
+    // KÍCH HOẠT GPS (Giữ nguyên gốc kết nối tốt)
     if ('geolocation' in navigator) {
         const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
         navigator.geolocation.watchPosition(onGpsUpdate, onGpsError, geoOptions);
@@ -300,101 +282,3 @@
     }
 
     function onGpsError(error) {
-        document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
-    }
-
-    // BẮT ĐẦU MỘT BÀI THI
-    function startExam(lessonNum) {
-        // Thực hiện mở khóa toàn bộ âm thanh ngay tại lượt click này
-        unlockAllAudiosOnInteraction();
-
-        activeLesson = lessonNum;
-        startLessonDistance = totalDistanceRun; 
-        startLessonSpeed = currentSpeedKmh;    
-        isConditionPassed = false;
-        isBeepDone = false;
-
-        for(let i=1; i<=4; i++) {
-            document.getElementById(`card-${i}`).classList.remove('active');
-        }
-        document.getElementById(`card-${lessonNum}`).classList.add('active');
-
-        if(lessonNum === 1) {
-            addLog("Bắt đầu Bài 1: Xuất phát.");
-            playCustomAudio(audioFiles.xuatPhat); 
-        } else if(lessonNum === 2) {
-            addLog(`Bài 2: Tăng tốc. Vận tốc gốc: ${startLessonSpeed.toFixed(1)} km/h`);
-            playCustomAudio(audioFiles.tangToc);  
-        } else if(lessonNum === 3) {
-            addLog(`Bài 3: Giảm tốc. Vận tốc gốc: ${startLessonSpeed.toFixed(1)} km/h`);
-            playCustomAudio(audioFiles.giamToc);  
-        } else if(lessonNum === 4) {
-            addLog("Bài 4: Kết thúc sát hạch.");
-            playCustomAudio(audioFiles.ketThuc);  
-            activeLesson = 0;
-        }
-    }
-
-    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM KHI XE CHẠY DỰA TRÊN GPS
-    function processExamLogic() {
-        if (activeLesson === 0) return;
-
-        let lessonDistance = totalDistanceRun - startLessonDistance;
-        document.getElementById('live-distance').innerText = lessonDistance.toFixed(1);
-
-        // BÀI 1: XUẤT PHÁT
-        if (activeLesson === 1) {
-            if (lessonDistance >= 15 && !isBeepDone) {
-                playCustomAudio(audioFiles.bip); 
-                addLog("Bài 1: Đã đi đủ 15m. Hoàn thành! (BÍP)");
-                isBeepDone = true;
-                activeLesson = 0;
-            }
-        }
-
-        // BÀI 2: TĂNG SỐ TĂNG TỐC ĐỘ
-        else if (activeLesson === 2) {
-            if (!isConditionPassed && (currentSpeedKmh >= startLessonSpeed + 5)) {
-                isConditionPassed = true;
-                playCustomAudio(audioFiles.tintin); 
-                addLog("Bài 2: Đã tăng tốc thêm 5km/h. Đạt yêu cầu! (TIN TIN)");
-            }
-
-            if (lessonDistance >= 100 && !isBeepDone) {
-                playCustomAudio(audioFiles.bip); 
-                isBeepDone = true;
-                addLog("Bài 2: Đã đi hết hạn mức 100m. (BÍP)");
-                
-                if (!isConditionPassed) {
-                    addLog("Bài 2: Bạn KHÔNG ĐẠT tốc độ yêu cầu.");
-                    playCustomAudio(audioFiles.chuaDatTocDo); 
-                }
-                activeLesson = 0;
-            }
-        }
-
-        // BÀI 3: GIẢM SỐ GIẢM TỐC ĐỘ
-        else if (activeLesson === 3) {
-            if (!isConditionPassed && (currentSpeedKmh <= startLessonSpeed - 5)) {
-                isConditionPassed = true;
-                playCustomAudio(audioFiles.tintin); 
-                addLog("Bài 3: Đã giảm tốc thêm 5km/h. Đạt yêu cầu! (TIN TIN)");
-            }
-
-            if (lessonDistance >= 100 && !isBeepDone) {
-                playCustomAudio(audioFiles.bip); 
-                isBeepDone = true;
-                addLog("Bài 3: Đã đi hết hạn mức 100m. (BÍP)");
-                
-                if (!isConditionPassed) {
-                    addLog("Bài 3: Bạn KHÔNG ĐẠT yêu cầu giảm tốc.");
-                    playCustomAudio(audioFiles.chuaGiamTocDo); 
-                }
-                activeLesson = 0;
-            }
-        }
-    }
-</script>
-
-</body>
-</html>
