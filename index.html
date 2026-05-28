@@ -64,9 +64,18 @@
             margin-top: 5px;
         }
         .gps-status {
-            font-size: 0.9em;
+            font-size: 0.95em;
             color: #bdc1c6;
             margin-bottom: 5px;
+            font-weight: 500;
+            padding: 4px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        /* Màu cảnh báo khi GPS không kết nối được lâu */
+        .gps-warning {
+            color: #ffc107 !important;
+            background-color: rgba(255, 193, 7, 0.1);
         }
         .exam-list {
             display: flex;
@@ -106,19 +115,19 @@
             transition: background 0.2s;
         }
 
-        /* Bài 1: Xanh lá cây */
+        /* Xanh lá cây */
         .btn-green { background-color: #2ecc71; }
         .btn-green:active { background-color: #27ae60; }
 
-        /* Bài 2: Xanh dương */
+        /* Xanh dương */
         .btn-blue { background-color: #3498db; }
         .btn-blue:active { background-color: #2980b9; }
 
-        /* Bài 3: Vàng */
+        /* Vàng */
         .btn-yellow { background-color: #f1c40f; color: #2c3e50; }
         .btn-yellow:active { background-color: #f39c12; }
 
-        /* Bài 4: Đỏ */
+        /* Đỏ */
         .btn-red { background-color: #e74c3c; }
         .btn-red:active { background-color: #c0392b; }
 
@@ -138,7 +147,7 @@
 
 <div class="container">
     <div class="header-area">
-        <img src="logo.jpg" alt="Logo Trung Tâm" class="logo">
+        <img src="logo.png" alt="Logo Trung Tâm" class="logo">
         <h1>Sát Hạch Đường Trường<br><span style="font-size: 0.85em; color: #5f6368; text-transform: none;">Trung Tâm GDNN GTVT An Giang</span></h1>
     </div>
     
@@ -197,23 +206,19 @@
         tintin: new Audio("tintin.mp3")
     };
 
-    // Cấu hình tải trước âm thanh
     Object.keys(audioFiles).forEach(key => {
         audioFiles[key].preload = "auto";
     });
 
-    // Hàm phát nhạc được tối ưu hóa ép buộc chạy trực tiếp bằng luồng tương tác người dùng
     function playCustomAudio(audioObject) {
         if (!audioObject) return;
         try {
             audioObject.pause(); 
             audioObject.currentTime = 0; 
-            
-            // Ép buộc trình duyệt thực thi
             let playPromise = audioObject.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
-                    console.log("Trình duyệt chặn phát âm thanh tự động, kích hoạt chế độ mồi: ", err);
+                    console.log("Trình duyệt chặn phát âm thanh tự động: ", err);
                 });
             }
         } catch (e) {
@@ -221,7 +226,6 @@
         }
     }
 
-    // HÀM QUAN TRỌNG: Mở khóa đồng loạt hệ thống âm thanh ngay khi bấm bất kỳ nút nào
     function unlockAllAudiosOnInteraction() {
         Object.keys(audioFiles).forEach(key => {
             audioFiles[key].play().then(() => {
@@ -234,6 +238,7 @@
     let lastPosition = null;
     let totalDistanceRun = 0; 
     let currentSpeedKmh = 0;  
+    let hasGpsConnected = false; // Biến kiểm tra xem đã từng nhận được GPS chưa
 
     // --- BIẾN THEO DÕI BÀI THI ---
     let activeLesson = 0;
@@ -248,7 +253,6 @@
         log.scrollTop = log.scrollHeight;
     }
 
-    // TÍNH KHOẢNG CÁCH GPS (Haversine)
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371e3; 
         const phi1 = lat1 * Math.PI / 180;
@@ -262,5 +266,58 @@
         return R * c; 
     }
 
+    // --- CƠ CHẾ CẢNH BÁO KHỞI ĐỘNG LÂU ---
+    // Thiết lập hẹn giờ: Nếu sau 10 giây (10000ms) chưa nhận dữ liệu, chuyển sang thông báo nhắc nhở
+    const gpsTimeoutWatcher = setTimeout(() => {
+        if (!hasGpsConnected) {
+            const gpsStatusEl = document.getElementById('gps-status');
+            gpsStatusEl.innerText = "⏳ Khởi động lâu... Hãy ra không gian trống / Bật Vị Trí máy";
+            gpsStatusEl.classList.add('gps-warning');
+            addLog("[Cảnh báo] GPS khởi động lâu, vui lòng kiểm tra quyền vị trí.");
+        }
+    }, 10000);
+
     // KÍCH HOẠT GPS
-    if
+    if ('geolocation' in navigator) {
+        const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
+        navigator.geolocation.watchPosition(onGpsUpdate, onGpsError, geoOptions);
+    } else {
+        document.getElementById('gps-status').innerText = "❌ Thiết bị không hỗ trợ GPS.";
+    }
+
+    function onGpsUpdate(position) {
+        // Đánh dấu đã kết nối thành công, xóa bỏ cảnh báo nếu có
+        hasGpsConnected = true;
+        clearTimeout(gpsTimeoutWatcher); 
+        
+        const gpsStatusEl = document.getElementById('gps-status');
+        gpsStatusEl.innerText = "📡 GPS Đang Kết Nối Tốt";
+        gpsStatusEl.classList.remove('gps-warning');
+
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        if (position.coords.speed !== null && position.coords.speed >= 0) {
+            currentSpeedKmh = position.coords.speed * 3.6;
+        } else {
+            currentSpeedKmh = 0; 
+        }
+        document.getElementById('live-speed').innerText = currentSpeedKmh.toFixed(1);
+
+        if (lastPosition !== null) {
+            const dist = calculateDistance(lastPosition.lat, lastPosition.lon, lat, lon);
+            if (dist > 0.5) { totalDistanceRun += dist; }
+        }
+        lastPosition = { lat: lat, lon: lon };
+        processExamLogic();
+    }
+
+    function onGpsError(error) {
+        clearTimeout(gpsTimeoutWatcher);
+        document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
+        document.getElementById('gps-status').classList.remove('gps-warning');
+    }
+
+    // BẮT ĐẦU MỘT BÀI THI
+    function startExam(lessonNum) {
+        unlockAllAudiosOnInteraction();
