@@ -100,19 +100,19 @@
             transition: background 0.2s;
         }
 
-        /* Xanh lá cây */
+        /* Xuất phát: Xanh lá cây */
         .btn-green { background-color: #2ecc71; }
         .btn-green:active { background-color: #27ae60; }
 
-        /* Xanh dương */
+        /* Tăng tốc: Xanh dương */
         .btn-blue { background-color: #3498db; }
         .btn-blue:active { background-color: #2980b9; }
 
-        /* Vàng */
+        /* Giảm tốc: Vàng */
         .btn-yellow { background-color: #f1c40f; color: #2c3e50; }
         .btn-yellow:active { background-color: #f39c12; }
 
-        /* Đỏ */
+        /* Kết thúc: Đỏ */
         .btn-red { background-color: #e74c3c; }
         .btn-red:active { background-color: #c0392b; }
 
@@ -167,118 +167,3 @@
             <button class="start-btn btn-red" onclick="startExam(4)">Kết thúc</button>
         </div>
     </div>
-
-    <strong>Nhật ký hành trình:</strong>
-    <div class="log-panel" id="log-panel">
-        [Hệ thống] Chờ cấp quyền định vị GPS...
-    </div>
-</div>
-
-<script>
-    // --- ĐƯỜNG DẪN FILE MP3 ---
-    const audioFiles = {
-        xuatPhat: new Audio("xuat-phat.mp3"),
-        tangToc: new Audio("tang-toc.mp3"),
-        giamToc: new Audio("giam-toc.mp3"),
-        ketThuc: new Audio("ket-thuc.mp3"),
-        chuaDatTocDo: new Audio("chua-dat-toc-do.mp3"),
-        chuaGiamTocDo: new Audio("chua-giam-toc-do.mp3"),
-        bip: new Audio("bip.mp3"),
-        tintin: new Audio("tintin.mp3")
-    };
-
-    // Cấu hình tải trước âm thanh
-    Object.keys(audioFiles).forEach(key => {
-        audioFiles[key].preload = "auto";
-    });
-
-    // Hàm phát nhạc được tối ưu hóa ép buộc chạy trực tiếp bằng luồng tương tác người dùng
-    function playCustomAudio(audioObject) {
-        if (!audioObject) return;
-        try {
-            audioObject.pause(); 
-            audioObject.currentTime = 0; 
-            
-            // Ép buộc trình duyệt thực thi
-            let playPromise = audioObject.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(err => {
-                    console.log("Trình duyệt chặn phát âm thanh tự động, kích hoạt chế độ mồi: ", err);
-                });
-            }
-        } catch (e) {
-            console.log("Lỗi thực thi âm thanh: ", e);
-        }
-    }
-
-    // HÀM QUAN TRỌNG: Mở khóa đồng loạt hệ thống âm thanh ngay khi bấm bất kỳ nút nào
-    function unlockAllAudiosOnInteraction() {
-        Object.keys(audioFiles).forEach(key => {
-            // Mồi chạy 0 giây ở chế độ âm lượng bằng 0 để trình duyệt cho phép phát tự động về sau
-            audioFiles[key].play().then(() => {
-                audioFiles[key].pause();
-            }).catch(()=>{});
-        });
-    }
-
-    // --- BIẾN ĐỊNH VỊ GPS THỰC TẾ ---
-    let lastPosition = null;
-    let totalDistanceRun = 0; 
-    let currentSpeedKmh = 0;  
-
-    // --- BIẾN THEO DÕI TRẠNG THÁI ---
-    let activeLesson = 0;
-    let startLessonDistance = 0;
-    let startLessonSpeed = 0;
-    let isConditionPassed = false;
-    let isBeepDone = false;
-
-    function addLog(text) {
-        const log = document.getElementById('log-panel');
-        log.innerHTML += `<br>• ${text}`;
-        log.scrollTop = log.scrollHeight;
-    }
-
-    // TÍNH KHOẢNG CÁCH GPS (Haversine)
-    function calculateDistance(lat1, lon1, lat2, lon2) {
-        const R = 6371e3; 
-        const phi1 = lat1 * Math.PI / 180;
-        const phi2 = lat2 * Math.PI / 180;
-        const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-        const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-        const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
-                  Math.cos(phi1) * Math.cos(phi2) *
-                  Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c; 
-    }
-
-    // KÍCH HOẠT GPS (Giữ nguyên gốc kết nối tốt)
-    if ('geolocation' in navigator) {
-        const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
-        navigator.geolocation.watchPosition(onGpsUpdate, onGpsError, geoOptions);
-    } else {
-        document.getElementById('gps-status').innerText = "❌ Thiết bị không hỗ trợ GPS.";
-    }
-
-    function onGpsUpdate(position) {
-        document.getElementById('gps-status').innerText = "📡 GPS Đang Kết Nối Tốt";
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        if (position.coords.speed !== null && position.coords.speed >= 0) {
-            currentSpeedKmh = position.coords.speed * 3.6;
-        } else {
-            currentSpeedKmh = 0; 
-        }
-        document.getElementById('live-speed').innerText = currentSpeedKmh.toFixed(1);
-
-        if (lastPosition !== null) {
-            const dist = calculateDistance(lastPosition.lat, lastPosition.lon, lat, lon);
-            if (dist > 0.5) { totalDistanceRun += dist; }
-        }
-        lastPosition = { lat: lat, lon: lon };
-        processExamLogic();
-    }
-
-    function onGpsError(error) {
