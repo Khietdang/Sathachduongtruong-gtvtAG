@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sát Hạch Đường Trường GPS</title>
+    <title>Sát Hạch Đường Trường - Trung Tâm GDNN GTVT An Giang</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -24,7 +24,8 @@
             text-align: center;
             color: #1a73e8;
             margin-top: 10px;
-            font-size: 1.6em;
+            font-size: 1.4em; /* Thu nhỏ một chút để vừa với tiêu đề dài */
+            line-height: 1.4;
         }
         .gps-panel {
             background: #202124;
@@ -129,7 +130,7 @@
 <body>
 
 <div class="container">
-    <h1>Sát Hạch Đường Trường GPS</h1>
+    <h1>Sát Hạch Đường Trường<br><span style="font-size: 0.85em; color: #5f6368;">Trung Tâm GDNN GTVT An Giang</span></h1>
     
     <div class="gps-panel">
         <div class="gps-status" id="gps-status">📡 Đang khởi động GPS...</div>
@@ -201,7 +202,7 @@
         }
     }
 
-    // GIẢI PHÁP MỚI: Dùng AudioContext tạo tiếng câm (im lặng hoàn toàn) để mở khóa phần cứng
+    // Tạo tiếng câm (im lặng hoàn toàn) để mở khóa phần cứng trên Safari/Chrome di động
     function unlockAudioContext() {
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (AudioContext) {
@@ -215,7 +216,6 @@
                 ctx.resume();
             }
         }
-        // Gỡ bỏ sự kiện sau khi đã mở khóa im lặng thành công
         document.removeEventListener('click', unlockAudioContext);
         document.removeEventListener('touchstart', unlockAudioContext);
     }
@@ -286,7 +286,7 @@
         document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
     }
 
-    // BẮT ĐẦU MỘT BÀI THI (Chỉ phát tiếng bài được chọn)
+    // BẮT ĐẦU MỘT BÀI THI
     function startExam(lessonNum) {
         activeLesson = lessonNum;
         startLessonDistance = totalDistanceRun; 
@@ -299,7 +299,6 @@
         }
         document.getElementById(`card-${lessonNum}`).classList.add('active');
 
-        // CHỈ PHÁT ĐÚNG THOẠI CỦA NÚT ĐƯỢC BẤM
         if(lessonNum === 1) {
             addLog("Bắt đầu Bài 1: Xuất phát.");
             playCustomAudio(audioFiles.xuatPhat); 
@@ -316,7 +315,7 @@
         }
     }
 
-    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM KHI DI CHUYỂN BẰNG GPS
+    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM
     function processExamLogic() {
         if (activeLesson === 0) return;
 
@@ -333,7 +332,7 @@
             }
         }
 
-        // BÀI 2: TẦNG SỐ TĂNG TỐC ĐỘ
+        // BÀI 2: TĂNG SỐ TĂNG TỐC ĐỘ
         else if (activeLesson === 2) {
             if (!isConditionPassed && (currentSpeedKmh >= startLessonSpeed + 5)) {
                 isConditionPassed = true;
