@@ -238,9 +238,9 @@
     let lastPosition = null;
     let totalDistanceRun = 0; 
     let currentSpeedKmh = 0;  
-    let hasGpsConnected = false; // Biến kiểm tra xem đã từng nhận được GPS chưa
+    let hasGpsConnected = false;
 
-    // --- BIẾN THEO DÕI BÀI THI ---
+    // --- BIẾN THEO DÕI TRẠNG THÁI ---
     let activeLesson = 0;
     let startLessonDistance = 0;
     let startLessonSpeed = 0;
@@ -267,7 +267,6 @@
     }
 
     // --- CƠ CHẾ CẢNH BÁO KHỞI ĐỘNG LÂU ---
-    // Thiết lập hẹn giờ: Nếu sau 10 giây (10000ms) chưa nhận dữ liệu, chuyển sang thông báo nhắc nhở
     const gpsTimeoutWatcher = setTimeout(() => {
         if (!hasGpsConnected) {
             const gpsStatusEl = document.getElementById('gps-status');
@@ -286,38 +285,9 @@
     }
 
     function onGpsUpdate(position) {
-        // Đánh dấu đã kết nối thành công, xóa bỏ cảnh báo nếu có
         hasGpsConnected = true;
         clearTimeout(gpsTimeoutWatcher); 
         
         const gpsStatusEl = document.getElementById('gps-status');
         gpsStatusEl.innerText = "📡 GPS Đang Kết Nối Tốt";
         gpsStatusEl.classList.remove('gps-warning');
-
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        if (position.coords.speed !== null && position.coords.speed >= 0) {
-            currentSpeedKmh = position.coords.speed * 3.6;
-        } else {
-            currentSpeedKmh = 0; 
-        }
-        document.getElementById('live-speed').innerText = currentSpeedKmh.toFixed(1);
-
-        if (lastPosition !== null) {
-            const dist = calculateDistance(lastPosition.lat, lastPosition.lon, lat, lon);
-            if (dist > 0.5) { totalDistanceRun += dist; }
-        }
-        lastPosition = { lat: lat, lon: lon };
-        processExamLogic();
-    }
-
-    function onGpsError(error) {
-        clearTimeout(gpsTimeoutWatcher);
-        document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
-        document.getElementById('gps-status').classList.remove('gps-warning');
-    }
-
-    // BẮT ĐẦU MỘT BÀI THI
-    function startExam(lessonNum) {
-        unlockAllAudiosOnInteraction();
