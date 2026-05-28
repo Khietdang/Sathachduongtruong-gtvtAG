@@ -270,3 +270,129 @@
     }
 
     // KÍCH HOẠT VÀ THEO DÕI GPS
+    if ('geolocation' in navigator) {
+        const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
+        navigator.geolocation.watchPosition(onGpsUpdate, onGpsError, geoOptions);
+    } else {
+        document.getElementById('gps-status').innerText = "❌ Thiết bị không hỗ trợ GPS.";
+    }
+
+    function onGpsUpdate(position) {
+        document.getElementById('gps-status').innerText = "📡 GPS Đang Kết Nối Tốt";
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        if (position.coords.speed !== null && position.coords.speed >= 0) {
+            currentSpeedKmh = position.coords.speed * 3.6;
+        } else {
+            currentSpeedKmh = 0; 
+        }
+        document.getElementById('live-speed').innerText = currentSpeedKmh.toFixed(1);
+
+        if (lastPosition !== null) {
+            const dist = calculateDistance(lastPosition.lat, lastPosition.lon, lat, lon);
+            if (dist > 0.5) { totalDistanceRun += dist; }
+        }
+        lastPosition = { lat: lat, lon: lon };
+        processExamLogic();
+    }
+
+    function onGpsError(error) {
+        document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
+    }
+
+    // BẮT ĐẦU MỘT BÀI THI (Phát lệnh thoại trực tiếp từ nút click)
+    function startExam(lessonNum) {
+        // Mở khóa toàn bộ danh sách âm thanh ngay khi người dùng chạm nút thi
+        unlockAllAudiosOnInteraction();
+
+        activeLesson = lessonNum;
+        startLessonDistance = totalDistanceRun; 
+        startLessonSpeed = currentSpeedKmh;    
+        isConditionPassed = false;
+        isBeepDone = false;
+
+        for(let i=1; i<=4; i++) {
+            document.getElementById(`card-${i}`).classList.remove('active');
+        }
+        document.getElementById(`card-${lessonNum}`).classList.add('active');
+
+        if(lessonNum === 1) {
+            addLog("Bắt đầu Bài 1: Xuất phát.");
+            playCustomAudio(audioFiles.xuatPhat); 
+        } else if(lessonNum === 2) {
+            addLog(`Bài 2: Tăng tốc. Vận tốc gốc: ${startLessonSpeed.toFixed(1)} km/h`);
+            playCustomAudio(audioFiles.tangToc);  
+        } else if(lessonNum === 3) {
+            addLog(`Bài 3: Giảm tốc. Vận tốc gốc: ${startLessonSpeed.toFixed(1)} km/h`);
+            playCustomAudio(audioFiles.giamToc);  
+        } else if(lessonNum === 4) {
+            addLog("Bài 4: Kết thúc sát hạch.");
+            playCustomAudio(audioFiles.ketThuc);  
+            activeLesson = 0;
+        }
+    }
+
+    // LOGIC TỰ ĐỘNG THEO DÕI TOẠ ĐỘ VÀ TÍNH ĐIỂM
+    function processExamLogic() {
+        if (activeLesson === 0) return;
+
+        let lessonDistance = totalDistanceRun - startLessonDistance;
+        document.getElementById('live-distance').innerText = lessonDistance.toFixed(1);
+
+        // BÀI 1: XUẤT PHÁT
+        if (activeLesson === 1) {
+            if (lessonDistance >= 15 && !isBeepDone) {
+                playCustomAudio(audioFiles.bip); 
+                addLog("Bài 1: Đã đi đủ 15m. Hoàn thành! (BÍP)");
+                isBeepDone = true;
+                activeLesson = 0;
+            }
+        }
+
+        // BÀI 2: TĂNG SỐ TĂNG TỐC ĐỘ
+        else if (activeLesson === 2) {
+            if (!isConditionPassed && (currentSpeedKmh >= startLessonSpeed + 5)) {
+                isConditionPassed = true;
+                playCustomAudio(audioFiles.tintin); 
+                addLog("Bài 2: Đã tăng tốc thêm 5km/h. Đạt yêu cầu! (TIN TIN)");
+            }
+
+            if (lessonDistance >= 100 && !isBeepDone) {
+                playCustomAudio(audioFiles.bip); 
+                isBeepDone = true;
+                addLog("Bài 2: Đã đi hết hạn mức 100m. (BÍP)");
+                
+                if (!isConditionPassed) {
+                    addLog("Bài 2: Bạn KHÔNG ĐẠT tốc độ yêu cầu.");
+                    playCustomAudio(audioFiles.chuaDatTocDo); 
+                }
+                activeLesson = 0;
+            }
+        }
+
+        // BÀI 3: GIẢM SỐ GIẢM TỐC ĐỘ
+        else if (activeLesson === 3) {
+            if (!isConditionPassed && (currentSpeedKmh <= startLessonSpeed - 5)) {
+                isConditionPassed = true;
+                playCustomAudio(audioFiles.tintin); 
+                addLog("Bài 3: Đã giảm tốc thêm 5km/h. Đạt yêu cầu! (TIN TIN)");
+            }
+
+            if (lessonDistance >= 100 && !isBeepDone) {
+                playCustomAudio(audioFiles.bip); 
+                isBeepDone = true;
+                addLog("Bài 3: Đã đi hết hạn mức 100m. (BÍP)");
+                
+                if (!isConditionPassed) {
+                    addLog("Bài 3: Bạn KHÔNG ĐẠT yêu cầu giảm tốc.");
+                    playCustomAudio(audioFiles.chuaGiamTocDo); 
+                }
+                activeLesson = 0;
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
