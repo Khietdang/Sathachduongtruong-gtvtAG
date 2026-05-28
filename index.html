@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sát Hạch Đường Trường - TRUNG TÂM GDNN GTVT AN GIANG</title>
+    <title>Sát Hạch Đường Trường GPS</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -82,7 +82,7 @@
             color: #5f6368;
         }
         
-        /* --- ĐỊNH DẠNG CÁC NÚT BẤM THEO MÀU SẮC YÊU CẦU --- */
+        /* --- ĐỊNH DẠNG CÁC NÚT BẤM --- */
         .start-btn {
             width: 100%;
             padding: 14px;
@@ -97,33 +97,21 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             transition: background 0.2s;
         }
-        .start-btn:strong {
-            filter: brightness(90%);
-        }
 
         /* Bài 1: Xanh lá cây */
-        .btn-green {
-            background-color: #2ecc71;
-        }
+        .btn-green { background-color: #2ecc71; }
         .btn-green:active { background-color: #27ae60; }
 
         /* Bài 2: Xanh dương */
-        .btn-blue {
-            background-color: #3498db;
-        }
+        .btn-blue { background-color: #3498db; }
         .btn-blue:active { background-color: #2980b9; }
 
-        /* Bài 3: Vàng (Chữ đen để dễ nhìn) */
-        .btn-yellow {
-            background-color: #f1c40f;
-            color: #2c3e50;
-        }
+        /* Bài 3: Vàng */
+        .btn-yellow { background-color: #f1c40f; color: #2c3e50; }
         .btn-yellow:active { background-color: #f39c12; }
 
         /* Bài 4: Đỏ */
-        .btn-red {
-            background-color: #e74c3c;
-        }
+        .btn-red { background-color: #e74c3c; }
         .btn-red:active { background-color: #c0392b; }
 
         .log-panel {
@@ -190,7 +178,7 @@
 </div>
 
 <script>
-    // --- KHAI BÁO FILE ÂM THANH NẰM CHUNG THƯ MỤC GỐC ---
+    // --- ĐƯỜNG DẪN ĐẾN CÁC FILE MP3 GỐC ---
     const audioFiles = {
         xuatPhat: new Audio("xuat-phat.mp3"),
         tangToc: new Audio("tang-toc.mp3"),
@@ -202,33 +190,37 @@
         tintin: new Audio("tintin.mp3")
     };
 
-    // Hàm gọi phát âm thanh tối ưu cho thiết bị di động
+    // Hàm phát âm thanh chuẩn, không bị chồng âm thanh khi mở trang
     function playCustomAudio(audioObject) {
         if (!audioObject) return;
-        audioObject.load(); 
-        audioObject.currentTime = 0; 
-        
-        let playPromise = audioObject.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.log("Trình duyệt chặn phát âm thanh: ", error);
-            });
+        try {
+            audioObject.currentTime = 0; 
+            audioObject.play().catch(err => console.log("Chờ người dùng tương tác: ", err));
+        } catch (e) {
+            console.log("Lỗi âm thanh: ", e);
         }
     }
 
-    // Kích hoạt phần cứng âm thanh ngay khi người dùng chạm màn hình lần đầu
-    function unlockMobileAudio() {
-        Object.keys(audioFiles).forEach(key => {
-            audioFiles[key].play().then(() => {
-                audioFiles[key].pause();
-                audioFiles[key].currentTime = 0;
-            }).catch(() => {});
-        });
-        document.removeEventListener('click', unlockMobileAudio);
-        document.removeEventListener('touchstart', unlockMobileAudio);
+    // GIẢI PHÁP MỚI: Dùng AudioContext tạo tiếng câm (im lặng hoàn toàn) để mở khóa phần cứng
+    function unlockAudioContext() {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+            const ctx = new AudioContext();
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+        }
+        // Gỡ bỏ sự kiện sau khi đã mở khóa im lặng thành công
+        document.removeEventListener('click', unlockAudioContext);
+        document.removeEventListener('touchstart', unlockAudioContext);
     }
-    document.addEventListener('click', unlockMobileAudio);
-    document.addEventListener('touchstart', unlockMobileAudio);
+    document.addEventListener('click', unlockAudioContext);
+    document.addEventListener('touchstart', unlockAudioContext);
 
     // --- BIẾN ĐỊNH VỊ GPS THỰC TẾ ---
     let lastPosition = null;
@@ -294,7 +286,7 @@
         document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
     }
 
-    // BẮT ĐẦU MỘT BÀI THI
+    // BẮT ĐẦU MỘT BÀI THI (Chỉ phát tiếng bài được chọn)
     function startExam(lessonNum) {
         activeLesson = lessonNum;
         startLessonDistance = totalDistanceRun; 
@@ -307,7 +299,7 @@
         }
         document.getElementById(`card-${lessonNum}`).classList.add('active');
 
-        // PHÁT FILE ÂM THANH KHI BẤM NÚT
+        // CHỈ PHÁT ĐÚNG THOẠI CỦA NÚT ĐƯỢC BẤM
         if(lessonNum === 1) {
             addLog("Bắt đầu Bài 1: Xuất phát.");
             playCustomAudio(audioFiles.xuatPhat); 
@@ -324,7 +316,7 @@
         }
     }
 
-    // LOGIC KIỂM TRA BÀI THI
+    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM KHI DI CHUYỂN BẰNG GPS
     function processExamLogic() {
         if (activeLesson === 0) return;
 
@@ -341,7 +333,7 @@
             }
         }
 
-        // BÀI 2: TĂNG SỐ TĂNG TỐC ĐỘ
+        // BÀI 2: TẦNG SỐ TĂNG TỐC ĐỘ
         else if (activeLesson === 2) {
             if (!isConditionPassed && (currentSpeedKmh >= startLessonSpeed + 5)) {
                 isConditionPassed = true;
