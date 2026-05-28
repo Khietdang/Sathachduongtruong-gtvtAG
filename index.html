@@ -20,12 +20,23 @@
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        h1 {
+        /* Khu vực hiển thị Logo và Tiêu đề */
+        .header-area {
             text-align: center;
+            margin-bottom: 20px;
+        }
+        .header-area .logo {
+            width: 130px;
+            height: 130px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+        h1 {
             color: #1a73e8;
-            margin-top: 10px;
-            font-size: 1.4em; /* Thu nhỏ một chút để vừa với tiêu đề dài */
+            margin: 0;
+            font-size: 1.4em;
             line-height: 1.4;
+            text-transform: uppercase;
         }
         .gps-panel {
             background: #202124;
@@ -83,13 +94,13 @@
             color: #5f6368;
         }
         
-        /* --- ĐỊNH DẠNG CÁC NÚT BẤM --- */
+        /* --- ĐỊNH DẠNG CÁC NÚT BẤM THEO MÀU SẮC YÊU CẦU --- */
         .start-btn {
             width: 100%;
             padding: 14px;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-weight: bold;
             font-size: 1.1em;
             cursor: pointer;
@@ -107,7 +118,7 @@
         .btn-blue { background-color: #3498db; }
         .btn-blue:active { background-color: #2980b9; }
 
-        /* Bài 3: Vàng */
+        /* Bài 3: Vàng (Chữ đen đậm dễ nhìn khi ra nắng) */
         .btn-yellow { background-color: #f1c40f; color: #2c3e50; }
         .btn-yellow:active { background-color: #f39c12; }
 
@@ -130,7 +141,10 @@
 <body>
 
 <div class="container">
-    <h1>Sát Hạch Đường Trường<br><span style="font-size: 0.85em; color: #5f6368;">Trung Tâm GDNN GTVT An Giang</span></h1>
+    <div class="header-area">
+        <img src="logo.png" alt="Logo Trung Tâm" class="logo">
+        <h1>Sát Hạch Đường Trường<br><span style="font-size: 0.85em; color: #5f6368; text-transform: none;">Trung Tâm GDNN GTVT An Giang</span></h1>
+    </div>
     
     <div class="gps-panel">
         <div class="gps-status" id="gps-status">📡 Đang khởi động GPS...</div>
@@ -179,7 +193,7 @@
 </div>
 
 <script>
-    // --- ĐƯỜNG DẪN ĐẾN CÁC FILE MP3 GỐC ---
+    // --- ĐƯỜNG DẪN ĐẾN CÁC FILE MP3 ---
     const audioFiles = {
         xuatPhat: new Audio("xuat-phat.mp3"),
         tangToc: new Audio("tang-toc.mp3"),
@@ -191,36 +205,37 @@
         tintin: new Audio("tintin.mp3")
     };
 
-    // Hàm phát âm thanh chuẩn, không bị chồng âm thanh khi mở trang
+    // Tự động thiết lập cấu hình tải trước bộ đệm cho âm thanh
+    Object.keys(audioFiles).forEach(key => {
+        audioFiles[key].preload = "auto";
+    });
+
+    // Hàm thực thi phát âm thanh chuẩn hóa
     function playCustomAudio(audioObject) {
         if (!audioObject) return;
         try {
+            audioObject.pause(); 
             audioObject.currentTime = 0; 
-            audioObject.play().catch(err => console.log("Chờ người dùng tương tác: ", err));
+            
+            let playPromise = audioObject.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    console.log("Trình duyệt di động yêu cầu tương tác: ", err);
+                });
+            }
         } catch (e) {
-            console.log("Lỗi âm thanh: ", e);
+            console.log("Lỗi luồng âm thanh: ", e);
         }
     }
 
-    // Tạo tiếng câm (im lặng hoàn toàn) để mở khóa phần cứng trên Safari/Chrome di động
-    function unlockAudioContext() {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (AudioContext) {
-            const ctx = new AudioContext();
-            const buffer = ctx.createBuffer(1, 1, 22050);
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(ctx.destination);
-            source.start(0);
-            if (ctx.state === 'suspended') {
-                ctx.resume();
-            }
-        }
-        document.removeEventListener('click', unlockAudioContext);
-        document.removeEventListener('touchstart', unlockAudioContext);
+    // Cơ chế kích hoạt và mở khóa đồng loạt hệ thống âm thanh từ lượt chạm nút thực tế
+    function unlockAllAudiosOnInteraction() {
+        Object.keys(audioFiles).forEach(key => {
+            audioFiles[key].play().then(() => {
+                audioFiles[key].pause();
+            }).catch(()=>{});
+        });
     }
-    document.addEventListener('click', unlockAudioContext);
-    document.addEventListener('touchstart', unlockAudioContext);
 
     // --- BIẾN ĐỊNH VỊ GPS THỰC TẾ ---
     let lastPosition = null;
@@ -254,127 +269,4 @@
         return R * c; 
     }
 
-    // KÍCH HOẠT GPS
-    if ('geolocation' in navigator) {
-        const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
-        navigator.geolocation.watchPosition(onGpsUpdate, onGpsError, geoOptions);
-    } else {
-        document.getElementById('gps-status').innerText = "❌ Thiết bị không hỗ trợ GPS.";
-    }
-
-    function onGpsUpdate(position) {
-        document.getElementById('gps-status').innerText = "📡 GPS Đang Kết Nối Tốt";
-        const lat = position.coords.latitude;
-        const lon = position.coords.longitude;
-
-        if (position.coords.speed !== null && position.coords.speed >= 0) {
-            currentSpeedKmh = position.coords.speed * 3.6;
-        } else {
-            currentSpeedKmh = 0; 
-        }
-        document.getElementById('live-speed').innerText = currentSpeedKmh.toFixed(1);
-
-        if (lastPosition !== null) {
-            const dist = calculateDistance(lastPosition.lat, lastPosition.lon, lat, lon);
-            if (dist > 0.5) { totalDistanceRun += dist; }
-        }
-        lastPosition = { lat: lat, lon: lon };
-        processExamLogic();
-    }
-
-    function onGpsError(error) {
-        document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
-    }
-
-    // BẮT ĐẦU MỘT BÀI THI
-    function startExam(lessonNum) {
-        activeLesson = lessonNum;
-        startLessonDistance = totalDistanceRun; 
-        startLessonSpeed = currentSpeedKmh;    
-        isConditionPassed = false;
-        isBeepDone = false;
-
-        for(let i=1; i<=4; i++) {
-            document.getElementById(`card-${i}`).classList.remove('active');
-        }
-        document.getElementById(`card-${lessonNum}`).classList.add('active');
-
-        if(lessonNum === 1) {
-            addLog("Bắt đầu Bài 1: Xuất phát.");
-            playCustomAudio(audioFiles.xuatPhat); 
-        } else if(lessonNum === 2) {
-            addLog(`Bài 2: Tăng tốc. Vận tốc gốc: ${startLessonSpeed.toFixed(1)} km/h`);
-            playCustomAudio(audioFiles.tangToc);  
-        } else if(lessonNum === 3) {
-            addLog(`Bài 3: Giảm tốc. Vận tốc gốc: ${startLessonSpeed.toFixed(1)} km/h`);
-            playCustomAudio(audioFiles.giamToc);  
-        } else if(lessonNum === 4) {
-            addLog("Bài 4: Kết thúc sát hạch.");
-            playCustomAudio(audioFiles.ketThuc);  
-            activeLesson = 0;
-        }
-    }
-
-    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM
-    function processExamLogic() {
-        if (activeLesson === 0) return;
-
-        let lessonDistance = totalDistanceRun - startLessonDistance;
-        document.getElementById('live-distance').innerText = lessonDistance.toFixed(1);
-
-        // BÀI 1: XUẤT PHÁT
-        if (activeLesson === 1) {
-            if (lessonDistance >= 15 && !isBeepDone) {
-                playCustomAudio(audioFiles.bip); 
-                addLog("Bài 1: Đã đi đủ 15m. Hoàn thành! (BÍP)");
-                isBeepDone = true;
-                activeLesson = 0;
-            }
-        }
-
-        // BÀI 2: TĂNG SỐ TĂNG TỐC ĐỘ
-        else if (activeLesson === 2) {
-            if (!isConditionPassed && (currentSpeedKmh >= startLessonSpeed + 5)) {
-                isConditionPassed = true;
-                playCustomAudio(audioFiles.tintin); 
-                addLog("Bài 2: Đã tăng tốc thêm 5km/h. Đạt yêu cầu! (TIN TIN)");
-            }
-
-            if (lessonDistance >= 100 && !isBeepDone) {
-                playCustomAudio(audioFiles.bip); 
-                isBeepDone = true;
-                addLog("Bài 2: Đã đi hết hạn mức 100m. (BÍP)");
-                
-                if (!isConditionPassed) {
-                    addLog("Bài 2: Bạn KHÔNG ĐẠT tốc độ yêu cầu.");
-                    playCustomAudio(audioFiles.chuaDatTocDo); 
-                }
-                activeLesson = 0;
-            }
-        }
-
-        // BÀI 3: GIẢM SỐ GIẢM TỐC ĐỘ
-        else if (activeLesson === 3) {
-            if (!isConditionPassed && (currentSpeedKmh <= startLessonSpeed - 5)) {
-                isConditionPassed = true;
-                playCustomAudio(audioFiles.tintin); 
-                addLog("Bài 3: Đã giảm tốc thêm 5km/h. Đạt yêu cầu! (TIN TIN)");
-            }
-
-            if (lessonDistance >= 100 && !isBeepDone) {
-                playCustomAudio(audioFiles.bip); 
-                isBeepDone = true;
-                addLog("Bài 3: Đã đi hết hạn mức 100m. (BÍP)");
-                
-                if (!isConditionPassed) {
-                    addLog("Bài 3: Bạn KHÔNG ĐẠT yêu cầu giảm tốc.");
-                    playCustomAudio(audioFiles.chuaGiamTocDo); 
-                }
-                activeLesson = 0;
-            }
-        }
-    }
-</script>
-
-</body>
-</html>
+    // KÍCH HOẠT VÀ THEO DÕI GPS
