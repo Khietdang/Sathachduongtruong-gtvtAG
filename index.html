@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sát Hạch Đường Trường GPS - Âm Thanh Riêng</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-top: 10px;
+            font-size: 1.6em;
+        }
+        .gps-panel {
+            background: #202124;
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .gps-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .gps-box {
+            background: #303134;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .gps-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #4ee44e;
+            margin-top: 5px;
+        }
+        .gps-status {
+            font-size: 0.9em;
+            color: #bdc1c6;
+            margin-bottom: 5px;
+        }
+        .exam-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .exam-card {
+            border: 2px solid #dadce0;
+            padding: 15px;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .exam-card.active {
+            border-color: #1a73e8;
+            background-color: #f4f8ff;
+        }
+        .exam-card h3 {
+            margin: 0 0 8px 0;
+            color: #3c4043;
+        }
+        .exam-card p {
+            margin: 5px 0;
+            font-size: 0.9em;
+            color: #5f6368;
+        }
+        .start-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .start-btn:active {
+            background-color: #1557b0;
+        }
+        .log-panel {
+            background: #f1f3f4;
+            border: 1px solid #dadce0;
+            padding: 12px;
+            border-radius: 6px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Sát Hạch Đường Trường GPS</h1>
+    
+    <div class="gps-panel">
+        <div class="gps-status" id="gps-status">📡 Đang khởi động GPS...</div>
+        <div class="gps-grid">
+            <div class="gps-box">
+                <div>TỐC ĐỘ (Thật)</div>
+                <div class="gps-value"><span id="live-speed">0.0</span> <span style="font-size:0.5em">km/h</span></div>
+            </div>
+            <div class="gps-box">
+                <div>ĐO ĐOẠN ĐƯỜNG</div>
+                <div class="gps-value"><span id="live-distance">0.0</span> <span style="font-size:0.5em">m</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="exam-list">
+        <div class="exam-card" id="card-1">
+            <h3>Bài 1: Xuất phát</h3>
+            <p>Đi đủ 15m báo Bíp.</p>
+            <button class="start-btn" onclick="startExam(1)">KÍCH HOẠT XUẤT PHÁT</button>
+        </div>
+
+        <div class="exam-card" id="card-2">
+            <h3>Bài 2: Tăng số tăng tốc độ</h3>
+            <p>Trong 100m phải tăng tốc thêm từ 5km/h trở lên.</p>
+            <button class="start-btn" onclick="startExam(2)">KÍCH HOẠT TĂNG TỐC</button>
+        </div>
+
+        <div class="exam-card" id="card-3">
+            <h3>Bài 3: Giảm số giảm tốc độ</h3>
+            <p>Trong 100m phải giảm tốc đi từ 5km/h trở lên.</p>
+            <button class="start-btn" onclick="startExam(3)">KÍCH HOẠT GIẢM TỐC</button>
+        </div>
+
+        <div class="exam-card" id="card-4">
+            <h3>Bài 4: Kết thúc</h3>
+            <p>Phát file âm thanh hiệu lệnh kết thúc.</p>
+            <button class="start-btn" onclick="startExam(4)">BẤM KẾT THÚC</button>
+        </div>
+    </div>
+
+    <strong>Nhật ký hành trình:</strong>
+    <div class="log-panel" id="log-panel">
+        [Hệ thống] Chờ cấp quyền định vị GPS...
+    </div>
+</div>
+
+<script>
+    // --- ĐƯỜNG DẪN ĐẾN THƯ MỤC CHỨA FILE ÂM THANH TRÊN GITHUB ---
+    // Vì file âm thanh nằm chung thư mục hoặc trong folder "audio" cùng cấp với index.html, ta để đường dẫn tương đối.
+    const AUDIO_PATH = "audio/"; 
+
+    // Khởi tạo các đối tượng Audio nhận file từ GitHub của bạn
+    const audioXuatPhat = new Audio(AUDIO_PATH + "xuat-phat.mp3");
+    const audioTangToc = new Audio(AUDIO_PATH + "tang-toc.mp3");
+    const audioGiamToc = new Audio(AUDIO_PATH + "giam-toc.mp3");
+    const audioKetThuc = new Audio(AUDIO_PATH + "ket-thuc.mp3");
+    const audioChuaDatTocDo = new Audio(AUDIO_PATH + "chua-dat-toc-do.mp3");
+    const audioChuaGiamTocDo = new Audio(AUDIO_PATH + "chua-giam-toc-do.mp3");
+    const audioBeep = new Audio(AUDIO_PATH + "bip.mp3");
+    const audioTinTin = new Audio(AUDIO_PATH + "tintin.mp3");
+
+    // Hàm tiện ích để bật file âm thanh một cách mượt mà
+    function playCustomAudio(audioObject) {
+        audioObject.currentTime = 0; // Tua về đầu file để có thể bấm phát lại liên tục
+        audioObject.play().catch(e => console.log("Trình duyệt chặn tự động phát âm thanh trước khi tương tác:", e));
+    }
+
+    // --- BIẾN ĐỊNH VỊ GPS THỰC TẾ ---
+    let lastPosition = null;
+    let totalDistanceRun = 0; 
+    let currentSpeedKmh = 0;  
+
+    // --- BIẾN THEO DÕI BÀI THI ---
+    let activeLesson = 0;
+    let startLessonDistance = 0;
+    let startLessonSpeed = 0;
+    let isConditionPassed = false;
+    let isBeepDone = false;
+
+    function addLog(text) {
+        const log = document.getElementById('log-panel');
+        log.innerHTML += `<br>• ${text}`;
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // TÍNH KHOẢNG CÁCH GPS (Haversine)
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; 
+        const phi1 = lat1 * Math.PI / 180;
+        const phi2 = lat2 * Math.PI / 180;
+        const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+        const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(deltaPhi/2) * Math.sin(deltaPhi/2) +
+                  Math.cos(phi1) * Math.cos(phi2) *
+                  Math.sin(deltaLambda/2) * Math.sin(deltaLambda/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c; 
+    }
+
+    // KÍCH HOẠT GPS
+    if ('geolocation' in navigator) {
+        const geoOptions = { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 };
+        navigator.geolocation.watchPosition(onGpsUpdate, onGpsError, geoOptions);
+    } else {
+        document.getElementById('gps-status').innerText = "❌ Thiết bị không hỗ trợ GPS.";
+    }
+
+    function onGpsUpdate(position) {
+        document.getElementById('gps-status').innerText = "📡 GPS Đang Kết Nối Tốt";
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+
+        if (position.coords.speed !== null && position.coords.speed >= 0) {
+            currentSpeedKmh = position.coords.speed * 3.6;
+        } else {
+            currentSpeedKmh = 0; 
+        }
+        document.getElementById('live-speed').innerText = currentSpeedKmh.toFixed(1);
+
+        if (lastPosition !== null) {
+            const dist = calculateDistance(lastPosition.lat, lastPosition.lon, lat, lon);
+            if (dist > 0.5) { totalDistanceRun += dist; }
+        }
+        lastPosition = { lat: lat, lon: lon };
+        processExamLogic();
+    }
+
+    function onGpsError(error) {
+        document.getElementById('gps-status').innerText = "❌ Lỗi định vị GPS.";
+    }
+
+    // BẮT ĐẦU MỘT BÀI THI
+    function startExam(lessonNum) {
+        activeLesson = lessonNum;
+        startLessonDistance = totalDistanceRun; 
+        startLessonSpeed = currentSpeedKmh;    
+        isConditionPassed = false;
+        isBeepDone = false;
+
+        for(let i=1; i<=4; i++) {
+            document.getElementById(`card-${i}`).classList.remove('active');
+        }
+        document.getElementById(`card-${lessonNum}`).classList.add('active');
+
+        // PHÁT FILE ÂM THANH THEO TỪNG BÀI
+        if(lessonNum === 1) {
+            addLog("Bắt đầu Bài 1: Xuất phát.");
+            playCustomAudio(audioXuatPhat); // Phát file âm thanh xuất phát riêng của bạn
+        } else if(lessonNum === 2) {
+            addLog(`Bài 2: Tăng tốc. Vận tốc gốc: ${startLessonSpeed.toFixed(1)} km/h`);
+            playCustomAudio(audioTangToc);  // Phát file âm thanh tăng tốc riêng của bạn
+        } else if(lessonNum === 3) {
+            addLog(`Bài 3: Giảm tốc. Vận tốc gốc: ${startLessonSpeed.toFixed(1)} km/h`);
+            playCustomAudio(audioGiamToc);  // Phát file âm thanh giảm tốc riêng của bạn
+        } else if(lessonNum === 4) {
+            addLog("Bài 4: Kết thúc sát hạch.");
+            playCustomAudio(audioKetThuc);  // Phát file âm thanh kết thúc riêng của bạn
+            activeLesson = 0;
+        }
+    }
+
+    // LOGIC KIỂM TRA BÀI THI
+    function processExamLogic() {
+        if (activeLesson === 0) return;
+
+        let lessonDistance = totalDistanceRun - startLessonDistance;
+        document.getElementById('live-distance').innerText = lessonDistance.toFixed(1);
+
+        // BÀI 1: XUẤT PHÁT
+        if (activeLesson === 1) {
+            if (lessonDistance >= 15 && !isBeepDone) {
+                playCustomAudio(audioBeep); // Phát tiếng Bíp từ file riêng
+                addLog("Bài 1: Đã đi đủ 15m. Hoàn thành! (BÍP)");
+                isBeepDone = true;
+                activeLesson = 0;
+            }
+        }
+
+        // BÀI 2: TĂNG SỐ TĂNG TỐC ĐỘ
+        else if (activeLesson === 2) {
+            if (!isConditionPassed && (currentSpeedKmh >= startLessonSpeed + 5)) {
+                isConditionPassed = true;
+                playCustomAudio(audioTinTin); // Phát tiếng Tin Tin từ file riêng
+                addLog("Bài 2: Đã tăng tốc thêm 5km/h. Đạt yêu cầu! (TIN TIN)");
+            }
+
+            if (lessonDistance >= 100 && !isBeepDone) {
+                playCustomAudio(audioBeep); 
+                isBeepDone = true;
+                addLog("Bài 2: Đã đi hết hạn mức 100m. (BÍP)");
+                
+                if (!isConditionPassed) {
+                    addLog("Bài 2: Bạn KHÔNG ĐẠT tốc độ yêu cầu.");
+                    playCustomAudio(audioChuaDatTocDo); // Phát thông báo chưa đạt tốc độ bằng giọng của bạn
+                }
+                activeLesson = 0;
+            }
+        }
+
+        // BÀI 3: GIẢM SỐ GIẢM TỐC ĐỘ
+        else if (activeLesson === 3) {
+            if (!isConditionPassed && (currentSpeedKmh <= startLessonSpeed - 5)) {
+                isConditionPassed = true;
+                playCustomAudio(audioTinTin); 
+                addLog("Bài 3: Đã giảm tốc thêm 5km/h. Đạt yêu cầu! (TIN TIN)");
+            }
+
+            if (lessonDistance >= 100 && !isBeepDone) {
+                playCustomAudio(audioBeep); 
+                isBeepDone = true;
+                addLog("Bài 3: Đã đi hết hạn mức 100m. (BÍP)");
+                
+                if (!isConditionPassed) {
+                    addLog("Bài 3: Bạn KHÔNG ĐẠT yêu cầu giảm tốc.");
+                    playCustomAudio(audioChuaGiamTocDo); // Phát thông báo chưa giảm tốc độ bằng giọng của bạn
+                }
+                activeLesson = 0;
+            }
+        }
+    }
+</script>
+
+</body>
+</html>
