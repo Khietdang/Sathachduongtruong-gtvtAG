@@ -59,7 +59,7 @@
         .exam-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 15px;
             margin-bottom: 20px;
         }
         .exam-card {
@@ -81,106 +81,44 @@
             font-size: 0.9em;
             color: #5f6368;
         }
+        
+        /* --- ĐỊNH DẠNG CÁC NÚT BẤM THEO MÀU SẮC YÊU CẦU --- */
         .start-btn {
             width: 100%;
-            padding: 12px;
-            background-color: #1a73e8;
+            padding: 14px;
             color: white;
             border: none;
             border-radius: 6px;
             font-weight: bold;
-            font-size: 1em;
+            font-size: 1.1em;
             cursor: pointer;
-            margin-top: 5px;
+            margin-top: 8px;
+            text-transform: uppercase;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background 0.2s;
         }
-        .start-btn:active {
-            background-color: #1557b0;
+        .start-btn:strong {
+            filter: brightness(90%);
         }
-        .log-panel {
-            background: #f1f3f4;
-            border: 1px solid #dadce0;
-            padding: 12px;
-            border-radius: 6px;
-            max-height: 120px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 0.9em;
+
+        /* Bài 1: Xanh lá cây */
+        .btn-green {
+            background-color: #2ecc71;
         }
-    </style>
-</head>
-<body>
+        .btn-green:active { background-color: #27ae60; }
 
-<div class="container">
-    <h1>Sát Hạch Đường Trường GPS</h1>
-    
-    <div class="gps-panel">
-        <div class="gps-status" id="gps-status">📡 Đang khởi động GPS...</div>
-        <div class="gps-grid">
-            <div class="gps-box">
-                <div>TỐC ĐỘ (Thật)</div>
-                <div class="gps-value"><span id="live-speed">0.0</span> <span style="font-size:0.5em">km/h</span></div>
-            </div>
-            <div class="gps-box">
-                <div>ĐO ĐOẠN ĐƯỜNG</div>
-                <div class="gps-value"><span id="live-distance">0.0</span> <span style="font-size:0.5em">m</span></div>
-            </div>
-        </div>
-    </div>
+        /* Bài 2: Xanh dương */
+        .btn-blue {
+            background-color: #3498db;
+        }
+        .btn-blue:active { background-color: #2980b9; }
 
-    <div class="exam-list">
-        <div class="exam-card" id="card-1">
-            <h3>Bài 1: Xuất phát</h3>
-            <p>Đi đủ 15m báo Bíp.</p>
-            <button class="start-btn" onclick="startExam(1)">KÍCH HOẠT XUẤT PHÁT</button>
-        </div>
+        /* Bài 3: Vàng (Chữ đen để dễ nhìn) */
+        .btn-yellow {
+            background-color: #f1c40f;
+            color: #2c3e50;
+        }
+        .btn-yellow:active { background-color: #f39c12; }
 
-        <div class="exam-card" id="card-2">
-            <h3>Bài 2: Tăng số tăng tốc độ</h3>
-            <p>Trong 100m phải tăng tốc thêm từ 5km/h trở lên.</p>
-            <button class="start-btn" onclick="startExam(2)">KÍCH HOẠT TĂNG TỐC</button>
-        </div>
-
-        <div class="exam-card" id="card-3">
-            <h3>Bài 3: Giảm số giảm tốc độ</h3>
-            <p>Trong 100m phải giảm tốc đi từ 5km/h trở lên.</p>
-            <button class="start-btn" onclick="startExam(3)">KÍCH HOẠT GIẢM TỐC</button>
-        </div>
-
-        <div class="exam-card" id="card-4">
-            <h3>Bài 4: Kết thúc</h3>
-            <p>Phát file âm thanh hiệu lệnh kết thúc.</p>
-            <button class="start-btn" onclick="startExam(4)">BẤM KẾT THÚC</button>
-        </div>
-    </div>
-
-    <strong>Nhật ký hành trình:</strong>
-    <div class="log-panel" id="log-panel">
-        [Hệ thống] Chờ cấp quyền định vị GPS...
-    </div>
-</div>
-
-<script>
-    // --- ĐỌC FILE ÂM THANH TRỰC TIẾP (Do để chung một thư mục gốc) ---
-    const audioXuatPhat = new Audio("xuat-phat.mp3");
-    const audioTangToc = new Audio("tang-toc.mp3");
-    const audioGiamToc = new Audio("giam-toc.mp3");
-    const audioKetThuc = new Audio("ket-thuc.mp3");
-    const audioChuaDatTocDo = new Audio("chua-dat-toc-do.mp3");
-    const audioChuaGiamTocDo = new Audio("chua-giam-toc-do.mp3");
-    const audioBeep = new Audio("bip.mp3");
-    const audioTinTin = new Audio("tintin.mp3");
-
-    // Hàm gọi phát âm thanh
-    function playCustomAudio(audioObject) {
-        audioObject.currentTime = 0; 
-        audioObject.play().catch(e => console.log("Lỗi phát âm thanh: ", e));
-    }
-
-    // --- BIẾN ĐỊNH VỊ GPS THỰC TẾ ---
-    let lastPosition = null;
-    let totalDistanceRun = 0; 
-    let currentSpeedKmh = 0;  
-
-    // --- BIẾN THEO DÕI BÀI THI ---
-    let activeLesson = 0;
-    let startLessonDistance =
+        /* Bài 4: Đỏ */
+        .btn-red
