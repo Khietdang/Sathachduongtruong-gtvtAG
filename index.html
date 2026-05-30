@@ -20,6 +20,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+        /* Khu vực hiển thị Logo và Tiêu đề */
         .header-area {
             text-align: center;
             margin-bottom: 20px;
@@ -84,6 +85,7 @@
             background-color: #f4f8ff;
         }
         
+        /* --- ĐỊNH DẠNG CÁC NÚT BẤM LỚN THEO CHUẨN UI --- */
         .start-btn {
             width: 100%;
             padding: 18px 10px;
@@ -98,15 +100,19 @@
             transition: background 0.2s;
         }
 
+        /* Xuất phát: Xanh lá cây */
         .btn-green { background-color: #2ecc71; }
         .btn-green:active { background-color: #27ae60; }
 
+        /* Tăng tốc: Xanh dương */
         .btn-blue { background-color: #3498db; }
         .btn-blue:active { background-color: #2980b9; }
 
+        /* Giảm tốc: Vàng */
         .btn-yellow { background-color: #f1c40f; color: #2c3e50; }
         .btn-yellow:active { background-color: #f39c12; }
 
+        /* Kết thúc: Đỏ */
         .btn-red { background-color: #e74c3c; }
         .btn-red:active { background-color: #c0392b; }
 
@@ -169,7 +175,7 @@
 </div>
 
 <script>
-    // --- ĐƯỜNG DẪN FILE MP3 ---
+    // --- ĐƯỜNG DẪN FILE MP3 BAN ĐẦU ---
     const audioFiles = {
         xuatPhat: new Audio("xuat-phat.mp3"),
         tangToc: new Audio("tang-toc.mp3"),
@@ -181,51 +187,38 @@
         tintin: new Audio("tintin.mp3")
     };
 
-    // Cấu hình tải trước dữ liệu âm thanh độc lập
+    // Cấu hình tải trước âm thanh
     Object.keys(audioFiles).forEach(key => {
         audioFiles[key].preload = "auto";
     });
 
-    // Hàm phát âm thanh chính xác theo yêu cầu gọi tên
+    // Hàm phát nhạc ban đầu của thầy
     function playCustomAudio(audioObject) {
         if (!audioObject) return;
         try {
             audioObject.pause(); 
             audioObject.currentTime = 0; 
             
+            // Ép buộc trình duyệt thực thi
             let playPromise = audioObject.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
-                    console.log("Trình duyệt yêu cầu kích hoạt tương tác trước: ", err);
+                    console.log("Trình duyệt chặn phát âm thanh tự động, kích hoạt chế độ mồi: ", err);
                 });
             }
         } catch (e) {
-            console.log("Lỗi âm thanh: ", e);
+            console.log("Lỗi thực thi âm thanh: ", e);
         }
     }
 
-    // CƠ CHẾ MỚI: Mở khóa trình duyệt bằng âm thanh ảo tần số cao, không chạm vào file MP3 gốc
-    let isAudioUnlocked = false;
-    function unlockAudioSystem() {
-        if (isAudioUnlocked) return;
-        try {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            if (AudioContext) {
-                const ctx = new AudioContext();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(20000, ctx.currentTime); // Tần số 20kHz tai người không nghe thấy
-                gain.gain.setValueAtTime(0.001, ctx.currentTime);     // Âm lượng siêu nhỏ
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(0);
-                osc.stop(0.01); // Phát trong 0.01 giây để mồi quyền trình duyệt
-            }
-            isAudioUnlocked = true;
-        } catch (e) {
-            console.log("Không thể mồi Web Audio Context", e);
-        }
+    // HÀM MỞ KHÓA ÂM THANH BAN ĐẦU CỦA THẦY
+    function unlockAllAudiosOnInteraction() {
+        Object.keys(audioFiles).forEach(key => {
+            // Mồi chạy 0 giây ở chế độ âm lượng bằng 0 để trình duyệt cho phép phát tự động về sau
+            audioFiles[key].play().then(() => {
+                audioFiles[key].pause();
+            }).catch(()=>{});
+        });
     }
 
     // --- BIẾN ĐỊNH VỊ GPS THỰC TẾ ---
@@ -233,7 +226,7 @@
     let totalDistanceRun = 0; 
     let currentSpeedKmh = 0;  
 
-    // --- BIẾN THEO DÕI TRẠNG THÁI ---
+    // --- BIẾN THEO DÕI BÀI THI ---
     let activeLesson = 0;
     let startLessonDistance = 0;
     let startLessonSpeed = 0;
@@ -292,10 +285,10 @@
         document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
     }
 
-    // BẮT ĐẦU THỰC HIỆN HÀNH ĐỘNG
+    // BẮT ĐẦU MỘT BÀI THI
     function startExam(lessonNum) {
-        // Thực hiện kích hoạt hệ thống âm thanh ẩn
-        unlockAudioSystem();
+        // Thực hiện mở khóa toàn bộ âm thanh ngay tại lượt click này bằng cơ chế gốc
+        unlockAllAudiosOnInteraction();
 
         activeLesson = lessonNum;
         startLessonDistance = totalDistanceRun; 
@@ -324,7 +317,7 @@
         }
     }
 
-    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM THEO GPS
+    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM KHI XE CHẠY DỰA TRÊN GPS
     function processExamLogic() {
         if (activeLesson === 0) return;
 
