@@ -175,50 +175,36 @@
 </div>
 
 <script>
-    // --- ĐƯỜNG DẪN FILE MP3 BAN ĐẦU ---
+    // --- ĐƯỜNG DẪN FILE MP3 THEO ĐOẠN MÃ CỦA THẦY ---
     const audioFiles = {
-        xuatPhat: new Audio("xuat-phat.mp3"),
-        tangToc: new Audio("tang-toc.mp3"),
-        giamToc: new Audio("giam-toc.mp3"),
-        ketThuc: new Audio("ket-thuc.mp3"),
+        xuatPhat: new Audio("start.mp3"),
+        tangToc: new Audio("speed_up.mp3"),
+        giamToc: new Audio("speed_down.mp3"),
+        ketThuc: new Audio("end.mp3"),
         chuaDatTocDo: new Audio("chua-dat-toc-do.mp3"),
         chuaGiamTocDo: new Audio("chua-giam-toc-do.mp3"),
         bip: new Audio("bip.mp3"),
         tintin: new Audio("tintin.mp3")
     };
 
-    // Cấu hình tải trước âm thanh
+    // Cấu hình tải trước dữ liệu âm thanh
     Object.keys(audioFiles).forEach(key => {
         audioFiles[key].preload = "auto";
     });
 
-    // Hàm phát nhạc ban đầu của thầy
+    // Hàm thực thi phát âm thanh chuẩn hóa
     function playCustomAudio(audioObject) {
         if (!audioObject) return;
         try {
             audioObject.pause(); 
             audioObject.currentTime = 0; 
             
-            // Ép buộc trình duyệt thực thi
-            let playPromise = audioObject.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(err => {
-                    console.log("Trình duyệt chặn phát âm thanh tự động, kích hoạt chế độ mồi: ", err);
-                });
-            }
+            audioObject.play().catch(e => {
+                console.log("Cần tương tác với trang trước khi phát nhạc", e);
+            });
         } catch (e) {
-            console.log("Lỗi thực thi âm thanh: ", e);
+            console.log("Lỗi âm thanh: ", e);
         }
-    }
-
-    // HÀM MỞ KHÓA ÂM THANH BAN ĐẦU CỦA THẦY
-    function unlockAllAudiosOnInteraction() {
-        Object.keys(audioFiles).forEach(key => {
-            // Mồi chạy 0 giây ở chế độ âm lượng bằng 0 để trình duyệt cho phép phát tự động về sau
-            audioFiles[key].play().then(() => {
-                audioFiles[key].pause();
-            }).catch(()=>{});
-        });
     }
 
     // --- BIẾN ĐỊNH VỊ GPS THỰC TẾ ---
@@ -226,7 +212,7 @@
     let totalDistanceRun = 0; 
     let currentSpeedKmh = 0;  
 
-    // --- BIẾN THEO DÕI BÀI THI ---
+    // --- BIẾN THEO DÕI TRẠNG THÁI BÀI THI ---
     let activeLesson = 0;
     let startLessonDistance = 0;
     let startLessonSpeed = 0;
@@ -285,11 +271,8 @@
         document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
     }
 
-    // BẮT ĐẦU MỘT BÀI THI
+    // BẮT ĐẦU THỰC HIỆN HÀNH ĐỘNG
     function startExam(lessonNum) {
-        // Thực hiện mở khóa toàn bộ âm thanh ngay tại lượt click này bằng cơ chế gốc
-        unlockAllAudiosOnInteraction();
-
         activeLesson = lessonNum;
         startLessonDistance = totalDistanceRun; 
         startLessonSpeed = currentSpeedKmh;    
@@ -317,7 +300,7 @@
         }
     }
 
-    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM KHI XE CHẠY DỰA TRÊN GPS
+    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM
     function processExamLogic() {
         if (activeLesson === 0) return;
 
