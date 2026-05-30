@@ -20,7 +20,6 @@
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        /* Khu vực hiển thị Logo và Tiêu đề */
         .header-area {
             text-align: center;
             margin-bottom: 20px;
@@ -85,7 +84,6 @@
             background-color: #f4f8ff;
         }
         
-        /* --- ĐỊNH DẠNG CÁC NÚT BẤM LỚN THEO CHUẨN UI --- */
         .start-btn {
             width: 100%;
             padding: 18px 10px;
@@ -100,19 +98,15 @@
             transition: background 0.2s;
         }
 
-        /* Xuất phát: Xanh lá cây */
         .btn-green { background-color: #2ecc71; }
         .btn-green:active { background-color: #27ae60; }
 
-        /* Tăng tốc: Xanh dương */
         .btn-blue { background-color: #3498db; }
         .btn-blue:active { background-color: #2980b9; }
 
-        /* Giảm tốc: Vàng */
         .btn-yellow { background-color: #f1c40f; color: #2c3e50; }
         .btn-yellow:active { background-color: #f39c12; }
 
-        /* Kết thúc: Đỏ */
         .btn-red { background-color: #e74c3c; }
         .btn-red:active { background-color: #c0392b; }
 
@@ -187,12 +181,12 @@
         tintin: new Audio("tintin.mp3")
     };
 
-    // Cấu hình tải trước âm thanh
+    // Cấu hình tải trước dữ liệu âm thanh độc lập
     Object.keys(audioFiles).forEach(key => {
         audioFiles[key].preload = "auto";
     });
 
-    // Hàm phát nhạc
+    // Hàm phát âm thanh chính xác theo yêu cầu gọi tên
     function playCustomAudio(audioObject) {
         if (!audioObject) return;
         try {
@@ -202,7 +196,7 @@
             let playPromise = audioObject.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
-                    console.log("Kích hoạt chế độ mồi: ", err);
+                    console.log("Trình duyệt yêu cầu kích hoạt tương tác trước: ", err);
                 });
             }
         } catch (e) {
@@ -210,13 +204,28 @@
         }
     }
 
-    // Mở khóa âm thanh khi người dùng tương tác
-    function unlockAllAudiosOnInteraction() {
-        Object.keys(audioFiles).forEach(key => {
-            audioFiles[key].play().then(() => {
-                audioFiles[key].pause();
-            }).catch(()=>{});
-        });
+    // CƠ CHẾ MỚI: Mở khóa trình duyệt bằng âm thanh ảo tần số cao, không chạm vào file MP3 gốc
+    let isAudioUnlocked = false;
+    function unlockAudioSystem() {
+        if (isAudioUnlocked) return;
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) {
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(20000, ctx.currentTime); // Tần số 20kHz tai người không nghe thấy
+                gain.gain.setValueAtTime(0.001, ctx.currentTime);     // Âm lượng siêu nhỏ
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(0);
+                osc.stop(0.01); // Phát trong 0.01 giây để mồi quyền trình duyệt
+            }
+            isAudioUnlocked = true;
+        } catch (e) {
+            console.log("Không thể mồi Web Audio Context", e);
+        }
     }
 
     // --- BIẾN ĐỊNH VỊ GPS THỰC TẾ ---
@@ -283,9 +292,10 @@
         document.getElementById('gps-status').innerText = "❌ Không nhận được GPS (Hãy bật Vị trí/Đi ra ngoài trời)";
     }
 
-    // BẮT ĐẦU THỰC HIỆN HÀNH ĐỘNG (ĐÃ BỎ CHỮ BÀI 1, 2, 3, 4 TRONG NHẬT KÝ)
+    // BẮT ĐẦU THỰC HIỆN HÀNH ĐỘNG
     function startExam(lessonNum) {
-        unlockAllAudiosOnInteraction();
+        // Thực hiện kích hoạt hệ thống âm thanh ẩn
+        unlockAudioSystem();
 
         activeLesson = lessonNum;
         startLessonDistance = totalDistanceRun; 
@@ -314,7 +324,7 @@
         }
     }
 
-    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM (ĐÃ BỎ CHỮ BÀI 1, 2, 3 TRONG THÔNG BÁO)
+    // LOGIC TỰ ĐỘNG CHẤM ĐIỂM THEO GPS
     function processExamLogic() {
         if (activeLesson === 0) return;
 
